@@ -1,40 +1,53 @@
-import time
+import subprocess
+import sys
 
-def train_classification(model_size, architecture):
-    """Simulates a classification training job."""
-    print(f"--- TRAINING JOB START ---")
-    print(f"Task: Image Classification")
-    print(f"Architecture: {architecture}")
-    print(f"Model Size: {model_size}")
-    print(f"Starting training...")
-    # Simulate work
-    time.sleep(2)
-    print(f"--- TRAINING JOB COMPLETE ---")
-    return f"Successfully started classification training for {architecture} with {model_size}."
+def run_classification_script(model_size, architecture):
+    """
+    Runs the train_classifier.py script as a subprocess and returns its output.
+    """
+    command = [
+        sys.executable,  # Use the same python interpreter that's running flask
+        'train_classifier.py',
+        '--model-size',
+        model_size
+    ]
 
-def train_segmentation(model_size, architecture):
-    """Simulates a segmentation training job."""
-    print(f"--- TRAINING JOB START ---")
-    print(f"Task: Semantic Segmentation")
-    print(f"Architecture: {architecture}")
-    print(f"Model Size: {model_size}")
-    print(f"Starting training...")
-    time.sleep(2)
-    print(f"--- TRAINING JOB COMPLETE ---")
-    return f"Successfully started segmentation training for {architecture} with {model_size}."
+    print(f"--- Running Subprocess ---")
+    print(f"Command: {' '.join(command)}")
 
-# Add other placeholder functions as needed for other tasks.
-# For now, these two cover the main idea.
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            check=True,  # This will raise a CalledProcessError if the script returns a non-zero exit code
+            timeout=300 # 5 minute timeout for the training script
+        )
+        print("--- Subprocess Finished Successfully ---")
+        # Return the standard output of the script
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        print(f"--- Subprocess Failed ---")
+        # Return the standard error if the script fails
+        error_message = f"Training script failed with exit code {e.returncode}.\n\n--- STDERR ---\n{e.stderr}"
+        return error_message
+    except subprocess.TimeoutExpired as e:
+        print(f"--- Subprocess Timed Out ---")
+        return f"Training script timed out after {e.timeout} seconds."
+    except FileNotFoundError:
+        return "Error: 'train_classifier.py' not found. Make sure the script is in the correct directory."
+
 
 def run_training_job(task_type, model_size, architecture):
     """
     Dispatcher function to run the correct training job based on task_type.
     """
     if task_type == "Image Classification":
-        return train_classification(model_size, architecture)
+        return run_classification_script(model_size, architecture)
+    # --- Other tasks still use placeholders for now ---
     elif task_type in ["Semantic Segmentation", "Instance Segmentation"]:
-        # For this simulation, we can group segmentation tasks
-        return train_segmentation(model_size, architecture)
+        print(f"--- Starting placeholder training for {task_type} ---")
+        return f"Placeholder: Training for {task_type} with {architecture} and {model_size} would start here."
     # Extend with other task types from dev_doc.md
     elif task_type == "Object Detection":
         print(f"--- Starting placeholder training for {task_type} ---")
