@@ -1,4 +1,5 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
+from training_logic import run_training_job
 
 app = Flask(__name__)
 
@@ -41,6 +42,24 @@ def get_architectures(task_type):
     """Returns a list of model architectures for a given task type."""
     architectures = TASK_TO_ARCHITECTURES.get(task_type, [])
     return jsonify(architectures)
+
+@app.route('/train', methods=['POST'])
+def train():
+    """Handles the training request from the frontend."""
+    data = request.get_json()
+    task_type = data.get('task_type')
+    model_arch = data.get('model_arch')
+    model_size = data.get('model_size')
+
+    if not all([task_type, model_arch, model_size]):
+        return jsonify({'status': 'Error', 'message': 'Missing required parameters.'}), 400
+
+    print(f"Received training request: Task={task_type}, Arch={model_arch}, Size={model_size}")
+
+    # Call the dispatcher function from the training logic module
+    result_message = run_training_job(task_type, model_size, model_arch)
+
+    return jsonify({'status': 'Success', 'message': result_message})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

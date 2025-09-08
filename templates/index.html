@@ -89,17 +89,40 @@
                 const selectedArch = modelArchSelect.value;
                 const selectedSize = modelSizeSelect.value;
 
-                if (selectedArch) {
-                    selectionOutput.innerHTML = `
-                        <p><strong>Selection Confirmed:</strong></p>
-                        <ul>
-                            <li><strong>Task Type:</strong> ${selectedTask}</li>
-                            <li><strong>Model Architecture:</strong> ${selectedArch}</li>
-                            <li><strong>Model Size:</strong> ${selectedSize}</li>
-                        </ul>`;
-                } else {
+                if (!selectedArch) {
                     selectionOutput.innerHTML = '<p style="color: red;">Please select a valid model architecture.</p>';
+                    return;
                 }
+
+                // Prepare data for POST request
+                const postData = {
+                    task_type: selectedTask,
+                    model_arch: selectedArch,
+                    model_size: selectedSize
+                };
+
+                selectionOutput.innerHTML = '<p>Sending training request...</p>';
+
+                // Send POST request to the /train endpoint
+                fetch('/train', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(postData),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'Success') {
+                        selectionOutput.innerHTML = `<p style="color: green;"><strong>${data.status}:</strong> ${data.message}</p>`;
+                    } else {
+                        selectionOutput.innerHTML = `<p style="color: red;"><strong>${data.status}:</strong> ${data.message}</p>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sending training request:', error);
+                    selectionOutput.innerHTML = '<p style="color: red;">An error occurred while sending the request.</p>';
+                });
             });
         });
     </script>
